@@ -127,5 +127,18 @@ public class MapTest {
     @DisplayName("replace 将对应 oldValue 的 key 的 value 替换为 newValue")
     @Test
     public void replace() {
+        assertEquals(testMap.get("nullValue"), null);
+        assertTrue(testMap.replace("nullValue", null, 123));
+        assertEquals(testMap.get("nullValue"), 123);
+
+        assertEquals(testMap.get("hello,world"), 2);
+        //value 不对则无法删除
+        assertFalse(testMap.replace("hello,world", null, 111));
+        assertEquals(testMap.get("hello,world"), 2);
+        assertTrue(testMap.replace("hello,world", 2, 111));
+        assertEquals(testMap.get("hello,world"), 111);
+
+        //删除不存在的 key
+        assertFalse(testMap.replace("我是一个不存在的key", null, 222));
     }
 }
