@@ -42,6 +42,14 @@ public class MapTest {
         assertThrows(UnsupportedOperationException.class, () -> testMap.put("a", 123));
     }
 
+    @DisplayName("lambda 方式迭代器，底层还是使用 entrySet 进行迭代")
+    @Test
+    public void forEach() {
+        testMap.forEach((key, value) -> {
+            System.out.println(String.format("%s ----> %s", key, value));
+        });
+    }
+
     @Test
     public void getOrDefault() {
         assertEquals(testMap.get("test"), 1);
@@ -80,5 +88,44 @@ public class MapTest {
         assertEquals(testMap.get("123"), 3 + 123);
         assertEquals(testMap.get("1023"), 4 + 1023);
         assertEquals(testMap.get("nullValue"), -1);
+    }
+
+    @DisplayName("putIfAbsent 如果 key 不存在或为 null 才 put")
+    @Test
+    public void putIfAbsent() {
+        assertEquals(testMap.get("nullValue"), null);
+        testMap.putIfAbsent("nullValue", 999);
+        assertEquals(testMap.get("nullValue"), 999);
+
+        testMap.putIfAbsent("我是一个不存在的 key", 999);
+        assertEquals(testMap.get("我是一个不存在的 key"), 999);
+
+        //修改已有值，该方法会修改失败
+        assertEquals(testMap.get("hello,world"), 2);
+        testMap.putIfAbsent("hello,world", 999);
+        assertEquals(testMap.get("hello,world"), 2);
+    }
+
+    @DisplayName("remove 如果 key value 匹配则删除 key")
+    @Test
+    public void remove() {
+        assertTrue(testMap.containsKey("nullValue"));
+        assertTrue(testMap.remove("nullValue", null));
+        assertFalse(testMap.containsKey("nullValue"));
+
+        assertTrue(testMap.containsKey("hello,world"));
+        //value 不对则无法删除
+        assertFalse(testMap.remove("hello,world", null));
+        assertTrue(testMap.containsKey("hello,world"));
+        assertTrue(testMap.remove("hello,world", 2));
+        assertFalse(testMap.containsKey("hello,world"));
+
+        //删除不存在的 key
+        assertFalse(testMap.remove("我是一个不存在的key", null));
+    }
+
+    @DisplayName("replace 将对应 oldValue 的 key 的 value 替换为 newValue")
+    @Test
+    public void replace() {
     }
 }
