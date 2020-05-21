@@ -126,7 +126,7 @@ public class MapTest {
 
     @DisplayName("replace 将对应 oldValue 的 key 的 value 替换为 newValue")
     @Test
-    public void replaceOldVlaue() {
+    public void replaceOldValue() {
         assertEquals(testMap.get("nullValue"), null);
         assertTrue(testMap.replace("nullValue", null, 123));
         assertEquals(testMap.get("nullValue"), 123);
