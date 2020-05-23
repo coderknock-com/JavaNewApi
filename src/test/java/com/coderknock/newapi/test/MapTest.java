@@ -7,6 +7,8 @@ import org.junit.jupiter.api.Test;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.function.BiFunction;
+import java.util.function.Function;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -63,34 +65,7 @@ public class MapTest {
         assertEquals(testMap.getOrDefault("不存在", 0), 0);
     }
 
-    @Test
-    public void replaceAll() {
-        assertEquals(testMap.get("test"), 1);
-        assertEquals(testMap.get("hello,world"), 2);
-        assertEquals(testMap.get("123"), 3);
-        assertEquals(testMap.get("1023"), 4);
-        assertEquals(testMap.get("nullValue"), null);
-        testMap.replaceAll((key, value) -> {
-            Integer keyInt;
-            if (Objects.isNull(value)) {
-                return -1;
-            }
-            try {
-                keyInt = Integer.valueOf(key);
-            } catch (NumberFormatException e) {
-                //说明不是数字
-                keyInt = key.length();
-            }
-            return (keyInt + value);
-        });
-        assertEquals(testMap.get("test"), 1 + "test".length());
-        assertEquals(testMap.get("hello,world"), 2 + "hello,world".length());
-        assertEquals(testMap.get("123"), 3 + 123);
-        assertEquals(testMap.get("1023"), 4 + 1023);
-        assertEquals(testMap.get("nullValue"), -1);
-    }
-
-    @DisplayName("putIfAbsent 如果 key 不存在或为 null 才 put")
+    @DisplayName("putIfAbsent 如果 key 对应的值为 null 【key不存在或实际值为null】 才 put")
     @Test
     public void putIfAbsent() {
         assertEquals(testMap.get("nullValue"), null);
@@ -122,6 +97,33 @@ public class MapTest {
 
         //删除不存在的 key
         assertFalse(testMap.remove("我是一个不存在的key", null));
+    }
+
+    @Test
+    public void replaceAll() {
+        assertEquals(testMap.get("test"), 1);
+        assertEquals(testMap.get("hello,world"), 2);
+        assertEquals(testMap.get("123"), 3);
+        assertEquals(testMap.get("1023"), 4);
+        assertEquals(testMap.get("nullValue"), null);
+        testMap.replaceAll((key, value) -> {
+            Integer keyInt;
+            if (Objects.isNull(value)) {
+                return -1;
+            }
+            try {
+                keyInt = Integer.valueOf(key);
+            } catch (NumberFormatException e) {
+                //说明不是数字
+                keyInt = key.length();
+            }
+            return (keyInt + value);
+        });
+        assertEquals(testMap.get("test"), 1 + "test".length());
+        assertEquals(testMap.get("hello,world"), 2 + "hello,world".length());
+        assertEquals(testMap.get("123"), 3 + 123);
+        assertEquals(testMap.get("1023"), 4 + 1023);
+        assertEquals(testMap.get("nullValue"), -1);
     }
 
     @DisplayName("replace 将对应 oldValue 的 key 的 value 替换为 newValue")
@@ -157,4 +159,67 @@ public class MapTest {
         assertEquals(null, testMap.replace("我是一个不存在的key", 222));
         assertFalse(testMap.containsKey("我是一个不存在的key"));
     }
+
+    @DisplayName("computeIfAbsent 如果 key 对应值为 null 则执行计算逻辑赋值，否则直接返回值")
+    @Test
+    public void computeIfAbsent() {
+        Function<String, Integer> compute = key -> {
+            Integer keyInt;
+            try {
+                keyInt = Integer.valueOf(key);
+            } catch (NumberFormatException e) {
+                //说明不是数字
+                keyInt = key.length();
+            }
+            return keyInt;
+        };
+
+        assertEquals(testMap.get("nullValue"), null);
+        assertEquals("nullValue".length(), testMap.computeIfAbsent("nullValue", compute));
+        assertEquals(testMap.get("nullValue"), "nullValue".length());
+
+        assertEquals(testMap.get("hello,world"), 2);
+        assertEquals(2, testMap.computeIfAbsent("hello,world", compute));
+        assertEquals(testMap.get("hello,world"), 2);
+
+        assertEquals("我是一个不存在的key".length(), testMap.computeIfAbsent("我是一个不存在的key", compute));
+        assertEquals(testMap.get("我是一个不存在的key3"), "我是一个不存在的key".length());
+        assertEquals(null, testMap.computeIfAbsent("我是一个不存在的key", key -> null));
+        assertFalse(testMap.containsKey("我是一个不存在的key3"));
+    }
+
+    @DisplayName("compute")
+    @Test
+    public void compute() {
+        assertEquals(testMap.get("hello,world"), 2);
+        assertEquals(testMap.get("1023"), 4);
+        assertEquals(testMap.get("nullValue"), null);
+        BiFunction<String, Integer, Integer> compute = (key, oldValue) -> {
+            Integer keyInt;
+            if ("1023".equals(key)) {
+                return null;
+            }
+            if (Objects.isNull(oldValue)) {
+                return -1;
+            }
+            try {
+                keyInt = Integer.valueOf(key);
+            } catch (NumberFormatException e) {
+                //说明不是数字
+                keyInt = key.length();
+            }
+            return (keyInt + oldValue);
+        };
+        //计算结果为 null 则会删除该 key
+        assertEquals(null, testMap.compute("1023", compute));
+        assertFalse(testMap.containsKey("1023"));
+
+        //计算结果不为空则新增或替换key
+        assertEquals(2 + "hello,world".length(), testMap.compute("hello,world", compute));
+        assertEquals(testMap.get("hello,world"), 2 + "hello,world".length());
+
+        assertEquals(-1, testMap.compute("nullValue", compute));
+        assertEquals(testMap.get("nullValue"), -1);
+    }
+
 }
