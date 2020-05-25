@@ -18,6 +18,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * @since 1.0.0
  */
 public class MapTest {
+    
     Map<String, Integer> testMap;
 
     @BeforeEach
